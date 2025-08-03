@@ -1,273 +1,117 @@
-import React, { useState, useRef } from 'react';
-import { Button } from '@/components/ui/button.jsx';
-import { Card, CardContent } from '@/components/ui/card.jsx';
-import { Slider } from '@/components/ui/slider.jsx';
-import { Upload, Download, Loader2 } from 'lucide-react';
-import { useImageConverter } from '../hooks/useImageConverter.js';
+import React, { useState } from "react";
 
-const PngToSvgConverter = () => {
-  const [colors, setColors] = useState([9]);
-  const [simplify, setSimplify] = useState([0]);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [dragActive, setDragActive] = useState(false);
-  const [conversionResult, setConversionResult] = useState(null);
-  const fileInputRef = useRef(null);
-  
-  const { convertPngToSvg, loading, error } = useImageConverter();
+function PngToSvgConverter() {
+  const [image, setImage] = useState(null);
+  const [palette, setPalette] = useState([]);
+  const [colors, setColors] = useState(9);
+  const [simplify, setSimplify] = useState(0);
 
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        setImage(img.src);
+        extractColors(img); // Paleti otomatik çıkar
+      };
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setSelectedFile(e.dataTransfer.files[0]);
-    }
-  };
+  // Basit renk analizi (ortalama piksel rengi) – geliştirebiliriz
+  const extractColors = (img) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
 
-  const handleFileSelect = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
-    }
-  };
+    const data = ctx.getImageData(0, 0, img.width, img.height).data;
+    const colorMap = {};
 
-  const openFileDialog = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleConvert = async () => {
-    if (!selectedFile) {
-      alert('Lütfen önce bir dosya seçin.');
-      return;
+    for (let i = 0; i < data.length; i += 4 * 10) { 
+      // 10 px aralıklarla örnek al
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const hex = rgbToHex(r, g, b);
+      colorMap[hex] = (colorMap[hex] || 0) + 1;
     }
 
-    try {
-      const result = await convertPngToSvg(selectedFile, colors[0], simplify[0]);
-      setConversionResult(result);
-    } catch (err) {
-      console.error('Conversion error:', err);
-      alert('Dönüştürme sırasında bir hata oluştu: ' + err.message);
-    }
+    // En çok tekrar eden ilk 10 rengi al
+    const topColors = Object.entries(colorMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([hex]) => hex);
+
+    setPalette(topColors);
   };
 
-  const downloadSvg = () => {
-    if (!conversionResult?.svg) return;
-    
-    const blob = new Blob([conversionResult.svg], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'converted.svg';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+  const rgbToHex = (r, g, b) =>
+    "#" +
+    [r, g, b]
+      .map((x) => x.toString(16).padStart(2, "0"))
+      .join("");
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
-      {/* Step indicators */}
-      <div className="flex justify-center items-center mb-8 space-x-8">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">1</div>
-          <span className="text-sm text-gray-600">Select a PNG or JPG from your device</span>
+    <div className="space-y-6">
+      {/* Controls */}
+      <div className="flex justify-center gap-10">
+        <div className="flex flex-col items-center">
+          <label className="font-medium mb-1">Colors</label>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setColors(Math.max(1, colors - 1))}>-</button>
+            <span>{colors}</span>
+            <button onClick={() => setColors(colors + 1)}>+</button>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">2</div>
-          <span className="text-sm text-gray-600">Select the number of palettes for your final SVG file.</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">3</div>
-          <span className="text-sm text-gray-600">Click Convert</span>
+
+        <div className="flex flex-col items-center">
+          <label className="font-medium mb-1">Simplify</label>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setSimplify(Math.max(0, simplify - 1))}>-</button>
+            <span>{simplify}</span>
+            <button onClick={() => setSimplify(simplify + 1)}>+</button>
+          </div>
         </div>
       </div>
 
-      <Card className="p-6">
-        <CardContent className="space-y-6">
-          {/* Controls */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Colors</label>
-              <div className="flex items-center space-x-4">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setColors([Math.max(1, colors[0] - 1)])}
-                >
-                  -
-                </Button>
-                <Slider
-                  value={colors}
-                  onValueChange={setColors}
-                  max={32}
-                  min={1}
-                  step={1}
-                  className="flex-1"
-                />
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setColors([Math.min(32, colors[0] + 1)])}
-                >
-                  +
-                </Button>
-                <span className="text-sm font-medium w-8">{colors[0]}</span>
-              </div>
-            </div>
+      {/* Upload Box */}
+      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+        <input
+          type="file"
+          accept="image/png, image/jpeg"
+          onChange={handleFileUpload}
+          className="hidden"
+          id="fileUpload"
+        />
+        <label
+          htmlFor="fileUpload"
+          className="cursor-pointer text-gray-500 hover:text-blue-500"
+        >
+          Drag & Drop a File <br /> or <br /> <span className="underline">Choose a File</span>
+        </label>
+      </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Simplify</label>
-              <div className="flex items-center space-x-4">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setSimplify([Math.max(0, simplify[0] - 1)])}
-                >
-                  -
-                </Button>
-                <Slider
-                  value={simplify}
-                  onValueChange={setSimplify}
-                  max={10}
-                  min={0}
-                  step={1}
-                  className="flex-1"
-                />
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setSimplify([Math.min(10, simplify[0] + 1)])}
-                >
-                  +
-                </Button>
-                <span className="text-sm font-medium w-8">{simplify[0]}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* File Upload Area */}
-          <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              dragActive 
-                ? 'border-blue-500 bg-blue-50' 
-                : 'border-gray-300 hover:border-gray-400'
-            }`}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
-          >
-            <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <p className="text-lg font-medium text-gray-900 mb-2">
-              Drag & Drop a File
-            </p>
-            <p className="text-sm text-gray-500 mb-4">
-              {selectedFile ? selectedFile.name : 'or'}
-            </p>
-            <Button onClick={openFileDialog} variant="outline">
-              Choose a File
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".png,.jpg,.jpeg"
-              onChange={handleFileSelect}
-              className="hidden"
+      {/* Palette */}
+      {palette.length > 0 && (
+        <div className="flex justify-center flex-wrap gap-3 mt-4">
+          {palette.map((color, index) => (
+            <div
+              key={index}
+              className="w-10 h-10 rounded border shadow"
+              style={{ backgroundColor: color }}
+              title={color}
             />
-          </div>
-
-          {/* Preview */}
-          {conversionResult?.preview && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Preview</label>
-              <div className="flex justify-center">
-                <img 
-                  src={conversionResult.preview} 
-                  alt="Preview" 
-                  className="max-w-xs border rounded"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Palette Preview */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Palette</label>
-            <div className="flex space-x-2">
-              {conversionResult?.colors ? 
-                conversionResult.colors.map((color, i) => (
-                  <div
-                    key={i}
-                    className="w-8 h-8 rounded border border-gray-300"
-                    style={{ backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})` }}
-                  />
-                )) :
-                Array.from({ length: colors[0] }, (_, i) => (
-                  <div
-                    key={i}
-                    className="w-8 h-8 rounded border border-gray-300"
-                    style={{ backgroundColor: `hsl(${(i * 360) / colors[0]}, 70%, 50%)` }}
-                  />
-                ))
-              }
-            </div>
-          </div>
-
-          {/* Error Display */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800 text-sm">{error}</p>
-            </div>
-          )}
-
-          {/* Convert Button */}
-          <div className="flex justify-center">
-            <Button 
-              size="lg" 
-              className="px-8" 
-              onClick={handleConvert}
-              disabled={loading || !selectedFile}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Converting...
-                </>
-              ) : (
-                'Convert'
-              )}
-            </Button>
-          </div>
-
-          {/* Download Button */}
-          {conversionResult && (
-            <div className="flex justify-center">
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="px-8"
-                onClick={downloadSvg}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download SVG
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
-};
+}
 
 export default PngToSvgConverter;
-
