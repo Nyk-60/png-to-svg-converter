@@ -1,81 +1,48 @@
-import "./App.css";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
-import PngToSvgConverter from "./components/PngToSvgConverter";
-import SvgToPngConverter from "./components/SvgToPngConverter";
-import AdSpace from "./components/AdSpace";
-import Gallery from "./components/Gallery";
-import CricutSilhouetteSection from "./components/CricutSilhouetteSection";
-import InfoSection from "./components/InfoSection";
-import HowItWorksSection from "./components/HowItWorksSection";
-
-import logo from "./assets/thingstosvg.png";
-import headerImage from "./assets/headeralti.jpg";
+import React from 'react';
+import headeralti from './assets/headeralti.jpg';
+import svgtopngimage from './assets/svgyopngimage.jpg';
 
 function App() {
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* HEADER */}
-      <header className="flex justify-between items-center py-4 px-6 shadow">
-        <div className="flex items-center">
-          <img
-            src={logo}
-            alt="ThingsToSVG"
-            className="h-10 w-auto"
-          />
-        </div>
+    <div className="App">
 
-        <nav className="space-x-6 text-sm font-semibold">
-          <a href="#howitworks" className="hover:text-blue-500">HOW IT WORKS</a>
-          <a href="#freesvg" className="hover:text-blue-500">FREE SVG</a>
-          <a href="#freepng" className="hover:text-blue-500">FREE PNG</a>
-          <a href="#blog" className="hover:text-blue-500">BLOG</a>
-          <a href="#contact" className="hover:text-blue-500">CONTACT</a>
-        </nav>
-      </header>
-
-      {/* HEADER ALTI BANNER */}
-      <div className="flex justify-center my-6">
-        <div className="w-[800px]">
-          <img
-            src={headerImage}
-            alt="PNG to SVG Banner"
-            className="w-full h-[250px] object-contain rounded-lg shadow"
-          />
-        </div>
+      {/* PNG to SVG Section */}
+      <div style={{ textAlign: 'center', marginTop: '30px' }}>
+        <h2 style={{ fontSize: '20px', marginBottom: '10px' }}>PNG to SVG</h2>
+        <img
+          src={headeralti}
+          alt="PNG to SVG"
+          style={{
+            display: 'block',
+            margin: '0 auto',
+            width: '800px',
+            height: '250px',
+            objectFit: 'contain',
+            borderRadius: '10px'
+          }}
+        />
       </div>
 
-      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
-        <AdSpace height="32" />
+      {/* Eski REKLAM GÖRSELİ alanını kaldırabilirsin */}
 
-        <section>
-          <h2 className="text-3xl font-bold text-center mb-8">PNG to SVG</h2>
-          <PngToSvgConverter />
-        </section>
+      {/* SVG to PNG Section */}
+      <div style={{ textAlign: 'center', marginTop: '50px' }}>
+        <h2 style={{ fontSize: '20px', marginBottom: '10px' }}>SVG to PNG</h2>
+        <img
+          src={svgtopngimage}
+          alt="SVG to PNG"
+          style={{
+            display: 'block',
+            margin: '0 auto',
+            width: '800px',
+            height: '250px',
+            objectFit: 'contain',
+            borderRadius: '10px'
+          }}
+        />
+      </div>
 
-        <CricutSilhouetteSection />
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <AdSpace height="64" />
-          <AdSpace height="64" />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <Gallery title="FREE SVG gallery" type="svg" />
-          <Gallery title="FREE PNG gallery" type="png" />
-        </div>
-
-        <section>
-          <h2 className="text-3xl font-bold text-center mb-8">SVG to PNG</h2>
-          <SvgToPngConverter />
-        </section>
-
-        <InfoSection />
-        <HowItWorksSection />
-        <AdSpace height="32" />
-      </main>
-
-      <Footer />
+      {/* Buradan sonra mevcut dönüştürme bileşenlerin geliyor */}
     </div>
   );
 }
