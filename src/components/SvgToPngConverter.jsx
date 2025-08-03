@@ -1,13 +1,15 @@
-import React, { useState, useRef } from "react";
-import { Button } from "@/components/ui/button.jsx";
-import { Download, Upload, Loader2 } from "lucide-react";
-import fileBack from "../assets/file_back.png";
+import React, { useState, useRef } from 'react';
+import { Button } from '@/components/ui/button.jsx';
+import { Upload, Download, Loader2 } from 'lucide-react';
+import { useImageConverter } from '../hooks/useImageConverter.js';
+import fileBack from '../assets/file_back.png';
 
 const SvgToPngConverter = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [conversionResult, setConversionResult] = useState(null);
-  const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
+
+  const { convertSvgToPng, loading, error } = useImageConverter();
 
   const handleFileSelect = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -17,94 +19,97 @@ const SvgToPngConverter = () => {
 
   const handleConvert = async () => {
     if (!selectedFile) {
-      alert("Please select a file first!");
+      alert('Lütfen önce bir dosya seçin.');
       return;
     }
-
-    setLoading(true);
     try {
-      // SVG → PNG dönüştürme işlemi burada yapılır.
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        // Basit önizleme olarak PNG base64 göstereceğiz
-        setConversionResult({ preview: ev.target.result });
-        setLoading(false);
-      };
-      reader.readAsDataURL(selectedFile);
+      const result = await convertSvgToPng(selectedFile);
+      setConversionResult(result);
     } catch (err) {
-      alert("Conversion failed: " + err.message);
-      setLoading(false);
+      alert('Dönüştürme sırasında bir hata oluştu: ' + err.message);
     }
   };
 
   const downloadPng = () => {
-    if (!conversionResult?.preview) return;
-    const a = document.createElement("a");
-    a.href = conversionResult.preview;
-    a.download = "converted.png";
-    a.click();
+    if (!conversionResult?.png) return;
+    const link = document.createElement('a');
+    link.href = conversionResult.png;
+    link.download = 'converted.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
-    <div className="flex flex-col items-center space-y-4">
-      {/* File Upload */}
-      <div
-        className="border-2 border-dashed rounded-lg w-full max-w-3xl h-40 flex flex-col items-center justify-center space-y-2"
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <Upload className="text-gray-400" />
-        <span>Drag & Drop a File</span>
-        <Button className="bg-green-500 hover:bg-green-600">Choose a File</Button>
+    <div className="flex flex-col items-center space-y-6">
+      {/* Dosya yükleme alanı */}
+      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center w-full max-w-2xl">
+        <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+        <p className="text-gray-600 mb-2">Drag & Drop a File</p>
+        <Button onClick={() => fileInputRef.current.click()} className="bg-green-500 hover:bg-green-600">
+          Choose a File
+        </Button>
         <input
-          type="file"
           ref={fileInputRef}
+          type="file"
           accept=".svg"
-          className="hidden"
           onChange={handleFileSelect}
+          className="hidden"
         />
       </div>
 
-      <div className="flex justify-center gap-16 w-full max-w-5xl mt-4">
-        {/* LEFT COLUMN */}
-        <div className="flex flex-col items-center">
-          <div className="relative w-64 h-64 border rounded-lg overflow-hidden">
-            <img src={fileBack} className="absolute inset-0 w-full h-full" />
+      {/* Önizleme ve Sonuç Alanı */}
+      <div className="flex justify-center space-x-12 w-full max-w-4xl">
+        {/* Sol Taraf */}
+        <div className="flex flex-col items-center w-[300px]">
+          <div className="relative w-64 h-64 flex items-center justify-center mb-4">
+            <img src={fileBack} alt="Background" className="absolute inset-0 w-full h-full object-cover rounded" />
             {selectedFile && (
               <img
                 src={URL.createObjectURL(selectedFile)}
-                className="absolute inset-0 w-full h-full object-contain"
+                alt="Input Preview"
+                className="max-w-full max-h-full object-contain z-10"
               />
             )}
           </div>
 
           <Button
-            className="mt-3 bg-lime-400 hover:bg-lime-500"
             onClick={handleConvert}
-            disabled={loading}
+            className="bg-lime-400 hover:bg-lime-500 px-6 py-2 rounded text-white font-medium"
+            disabled={loading || !selectedFile}
           >
-            {loading ? <Loader2 className="animate-spin" /> : "Convert"}
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Converting...
+              </>
+            ) : (
+              'Convert'
+            )}
           </Button>
         </div>
 
-        {/* RIGHT COLUMN */}
-        <div className="flex flex-col items-center">
-          <div className="text-sm font-medium mb-2">Preview</div>
-          <div className="relative w-64 h-64 border rounded-lg overflow-hidden">
-            <img src={fileBack} className="absolute inset-0 w-full h-full" />
-            {conversionResult?.preview && (
+        {/* Sağ Taraf */}
+        <div className="flex flex-col items-center w-[300px]">
+          <span className="mb-2 text-sm font-medium">Preview</span>
+          <div className="relative w-64 h-64 flex items-center justify-center mb-4">
+            <img src={fileBack} alt="Background" className="absolute inset-0 w-full h-full object-cover rounded" />
+            {conversionResult?.png && (
               <img
-                src={conversionResult.preview}
-                className="absolute inset-0 w-full h-full object-contain"
+                src={conversionResult.png}
+                alt="Output Preview"
+                className="max-w-full max-h-full object-contain z-10"
               />
             )}
           </div>
 
           <Button
-            className="mt-3 bg-lime-400 hover:bg-lime-500"
             onClick={downloadPng}
+            className="bg-lime-400 hover:bg-lime-500 px-6 py-2 rounded text-white font-medium"
             disabled={!conversionResult}
           >
-            <Download className="mr-2 h-4 w-4" /> Download PNG
+            <Download className="mr-2 h-4 w-4" />
+            Download PNG
           </Button>
         </div>
       </div>
