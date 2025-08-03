@@ -1,10 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button.jsx';
 import { Card, CardContent } from '@/components/ui/card.jsx';
-import { Slider } from '@/components/ui/slider.jsx';
 import { Upload, Download, Loader2 } from 'lucide-react';
 import { useImageConverter } from '../hooks/useImageConverter.js';
-
 import fileBack from '../assets/file_back.png';
 
 const PngToSvgConverter = () => {
@@ -39,16 +37,13 @@ const PngToSvgConverter = () => {
     }
   };
 
-  const openFileDialog = () => {
-    fileInputRef.current?.click();
-  };
+  const openFileDialog = () => fileInputRef.current?.click();
 
   const handleConvert = async () => {
     if (!selectedFile) {
       alert('Lütfen önce bir dosya seçin.');
       return;
     }
-
     try {
       const result = await convertPngToSvg(selectedFile, colors[0], simplify[0]);
       setConversionResult(result);
@@ -60,7 +55,6 @@ const PngToSvgConverter = () => {
 
   const downloadSvg = () => {
     if (!conversionResult?.svg) return;
-
     const blob = new Blob([conversionResult.svg], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -72,12 +66,23 @@ const PngToSvgConverter = () => {
     URL.revokeObjectURL(url);
   };
 
+  const handleColorPick = (index) => {
+    const input = document.createElement('input');
+    input.type = 'color';
+    input.oninput = (e) => {
+      const newColors = [...(conversionResult?.colors || Array(colors[0]).fill('#ccc'))];
+      newColors[index] = e.target.value;
+      setConversionResult({ ...conversionResult, colors: newColors });
+    };
+    input.click();
+  };
+
   return (
     <div className="w-full max-w-5xl mx-auto">
       <Card className="p-6">
         <CardContent className="space-y-6">
 
-          {/* Drag & Drop Area */}
+          {/* Drag & Drop */}
           <div
             className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
               dragActive
@@ -103,10 +108,14 @@ const PngToSvgConverter = () => {
             />
           </div>
 
-          {/* Controls + Preview */}
+          {/* Preview Area */}
           <div className="grid grid-cols-2 gap-8 items-start">
+            {/* LEFT */}
             <div className="flex flex-col items-center space-y-3">
-              <div className="flex space-x-6">
+
+              {/* Controls */}
+              <div className="flex space-x-8">
+                {/* Colors */}
                 <div className="flex flex-col items-center space-y-1">
                   <label className="text-sm font-medium">Colors</label>
                   <div className="flex items-center space-x-2">
@@ -130,6 +139,7 @@ const PngToSvgConverter = () => {
                   </div>
                 </div>
 
+                {/* Simplify */}
                 <div className="flex flex-col items-center space-y-1">
                   <label className="text-sm font-medium">Simplify</label>
                   <div className="flex items-center space-x-2">
@@ -154,8 +164,9 @@ const PngToSvgConverter = () => {
                 </div>
               </div>
 
+              {/* Image Preview */}
               <div
-                className="w-64 h-64 bg-center bg-contain bg-no-repeat border-2 border-dashed rounded-md flex items-center justify-center relative"
+                className="w-64 h-64 bg-center bg-contain bg-no-repeat border-2 border-dashed rounded-md flex items-center justify-center"
                 style={{ backgroundImage: `url(${fileBack})` }}
               >
                 {selectedFile && (
@@ -168,16 +179,21 @@ const PngToSvgConverter = () => {
               </div>
 
               {/* Palette */}
-              <div className="flex space-x-2 mt-2">
-                {Array.from({ length: colors[0] }, (_, i) => (
-                  <div
-                    key={i}
-                    className="w-6 h-6 rounded border border-gray-300"
-                    style={{ backgroundColor: conversionResult?.colors?.[i] || '#ccc' }}
-                  />
-                ))}
+              <div className="flex flex-col items-center space-y-2 w-64">
+                <span className="text-sm font-medium">Palette</span>
+                <div className="flex justify-between w-full">
+                  {Array.from({ length: colors[0] }, (_, i) => (
+                    <div
+                      key={i}
+                      className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+                      style={{ backgroundColor: conversionResult?.colors?.[i] || '#ccc' }}
+                      onClick={() => handleColorPick(i)}
+                    />
+                  ))}
+                </div>
               </div>
 
+              {/* Convert Button */}
               <Button
                 onClick={handleConvert}
                 disabled={loading || !selectedFile}
@@ -187,10 +203,10 @@ const PngToSvgConverter = () => {
               </Button>
             </div>
 
-            {/* SVG Output */}
+            {/* RIGHT */}
             <div className="flex flex-col items-center space-y-3">
               <div
-                className="w-64 h-64 bg-center bg-contain bg-no-repeat border-2 border-dashed rounded-md flex items-center justify-center relative"
+                className="w-64 h-64 bg-center bg-contain bg-no-repeat border-2 border-dashed rounded-md flex items-center justify-center"
                 style={{ backgroundImage: `url(${fileBack})` }}
               >
                 {conversionResult?.preview && (
