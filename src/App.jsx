@@ -1,79 +1,78 @@
-import "./App.css";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
-import PngToSvgConverter from "./components/PngToSvgConverter";
-import SvgToPngConverter from "./components/SvgToPngConverter";
-import AdSpace from "./components/AdSpace";
-import Gallery from "./components/Gallery";
-import CricutSilhouetteSection from "./components/CricutSilhouetteSection";
-import InfoSection from "./components/InfoSection";
-import HowItWorksSection from "./components/HowItWorksSection";
-
-import logo from "./assets/thingstosvg.png";         // Logo
-import headerImage from "./assets/headeralti.jpg";   // Header altı görsel
+import React from "react";
+import headerImage from "./assets/headeralti.jpg";
 
 function App() {
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* HEADER */}
-      <header className="flex justify-between items-center py-4 px-6 shadow">
-        <div className="flex items-center">
-          <img
-            src={logo}
-            alt="ThingsToSVG"
-            className="h-10 w-auto"
-          />
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="flex items-center justify-between px-6 py-4 shadow">
+        <div className="flex items-center space-x-2">
+          <img src="/logo192.png" alt="Logo" className="h-8 w-auto" />
         </div>
-
-        <nav className="space-x-6 text-sm font-semibold">
-          <a href="#howitworks" className="hover:text-blue-500">HOW IT WORKS</a>
-          <a href="#freesvg" className="hover:text-blue-500">FREE SVG</a>
-          <a href="#freepng" className="hover:text-blue-500">FREE PNG</a>
-          <a href="#blog" className="hover:text-blue-500">BLOG</a>
-          <a href="#contact" className="hover:text-blue-500">CONTACT</a>
+        <nav className="flex space-x-6 text-sm font-semibold text-gray-800">
+          <a href="#how-it-works" className="hover:text-blue-600">
+            HOW IT WORKS
+          </a>
+          <a href="#free-svg" className="hover:text-blue-600">
+            FREE SVG
+          </a>
+          <a href="#free-png" className="hover:text-blue-600">
+            FREE PNG
+          </a>
+          <a href="#blog" className="hover:text-blue-600">
+            BLOG
+          </a>
+          <a href="#contact" className="hover:text-blue-600">
+            CONTACT
+          </a>
         </nav>
       </header>
 
-      {/* HEADER ALTI GÖRSEL */}
-      <div className="w-full flex justify-center my-4">
-        <img
-          src={headerImage}
-          alt="PNG to SVG Banner"
-          className="w-full max-h-[400px] object-cover rounded-lg shadow"
-        />
+      {/* Header Altı Banner */}
+      <div className="flex justify-center my-6">
+        <div className="w-[800px]">
+          <img
+            src={headerImage}
+            alt="PNG to SVG Banner"
+            className="w-full h-[250px] object-contain rounded-lg shadow"
+          />
+        </div>
       </div>
 
-      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
-        <AdSpace height="32" />
-
-        <section>
-          <h2 className="text-3xl font-bold text-center mb-8">PNG to SVG</h2>
-          <PngToSvgConverter />
-        </section>
-
-        <CricutSilhouetteSection />
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <AdSpace height="64" />
-          <AdSpace height="64" />
+      {/* Reklam Alanı (Adsense için boş bırakıldı) */}
+      <div className="flex justify-center my-4">
+        <div className="w-[800px] h-[120px] border border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 text-sm">
+          {/* Adsense buraya gelecek */}
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <Gallery title="FREE SVG gallery" type="svg" />
-          <Gallery title="FREE PNG gallery" type="png" />
+      {/* İçerik Alanı */}
+      <main className="px-4 max-w-4xl mx-auto text-center">
+        <h1 className="text-2xl font-bold mb-6">PNG to SVG</h1>
+        <p className="text-gray-600 mb-8">
+          Select a PNG or JPG from your device, choose the palette size, and
+          convert it to SVG with a single click.
+        </p>
+
+        {/* Buraya Colors, Simplify ve Upload bileşenleri geliyor */}
+        {/* Örneğin: */}
+        <div className="bg-white rounded-xl shadow p-4 mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-center">
+              <p className="font-semibold">Colors</p>
+              {/* Slider veya butonlar */}
+            </div>
+            <div className="text-center">
+              <p className="font-semibold">Simplify</p>
+              {/* Slider veya butonlar */}
+            </div>
+          </div>
+
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-10 text-gray-400">
+            Drag & Drop a File
+          </div>
         </div>
-
-        <section>
-          <h2 className="text-3xl font-bold text-center mb-8">SVG to PNG</h2>
-          <SvgToPngConverter />
-        </section>
-
-        <InfoSection />
-        <HowItWorksSection />
-        <AdSpace height="32" />
       </main>
-
-      <Footer />
     </div>
   );
 }
