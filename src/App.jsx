@@ -3,7 +3,6 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import PngToSvgConverter from "./components/PngToSvgConverter";
 import SvgToPngConverter from "./components/SvgToPngConverter";
-import AdSpace from "./components/AdSpace";
 import Gallery from "./components/Gallery";
 import CricutSilhouetteSection from "./components/CricutSilhouetteSection";
 import InfoSection from "./components/InfoSection";
@@ -73,9 +72,6 @@ function App() {
 
         <InfoSection />
         <HowItWorksSection />
-
-        {/* AdSpace üst/orta alanlar kullanılabilir, alt placeholder kaldırıldı */}
-        <AdSpace height="64" showPlaceholder={false} />
       </main>
 
       <Footer />
