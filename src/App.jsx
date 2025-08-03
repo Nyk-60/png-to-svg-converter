@@ -50,12 +50,6 @@ function App() {
 
         <CricutSilhouetteSection />
 
-        {/* Reklam Alanları */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <AdSpace height="64" showPlaceholder={false} />
-          <AdSpace height="64" showPlaceholder={false} />
-        </div>
-
         {/* Gallery */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Gallery title="FREE SVG gallery" type="svg" />
