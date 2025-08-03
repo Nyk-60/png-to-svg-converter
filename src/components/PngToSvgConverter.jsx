@@ -4,8 +4,10 @@ import { Card, CardContent } from "@/components/ui/card.jsx";
 import { Upload, Download, Loader2 } from "lucide-react";
 import { useImageConverter } from "../hooks/useImageConverter.js";
 
+const MAX_COLORS = 10;
+
 const PngToSvgConverter = () => {
-  const [colors, setColors] = useState(3);
+  const [colors, setColors] = useState(1);
   const [simplify, setSimplify] = useState(0);
   const [palette, setPalette] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -15,8 +17,8 @@ const PngToSvgConverter = () => {
 
   const { convertPngToSvg, loading, error } = useImageConverter();
 
-  // Renk analizi (Canvas)
-  const extractColors = (imageFile, maxColors = 10) =>
+  // Renk analizi
+  const extractColors = (imageFile, maxColors = MAX_COLORS) =>
     new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = "Anonymous";
@@ -29,11 +31,9 @@ const PngToSvgConverter = () => {
 
         const data = ctx.getImageData(0, 0, img.width, img.height).data;
         const colorMap = {};
-
-        for (let i = 0; i < data.length; i += 4 * 10) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
+        for (let i = 0; i < data.length; i += 4 * 20) {
+          const [r, g, b, a] = data.slice(i, i + 4);
+          if (a < 128) continue; // Şeffafları atla
           const key = `${r},${g},${b}`;
           colorMap[key] = (colorMap[key] || 0) + 1;
         }
@@ -43,7 +43,7 @@ const PngToSvgConverter = () => {
           .slice(0, maxColors)
           .map((c) => `rgb(${c[0]})`);
 
-        resolve(sorted);
+        resolve(sorted.length ? sorted : ["rgb(200,200,200)"]);
       };
 
       const url = URL.createObjectURL(imageFile);
@@ -54,9 +54,10 @@ const PngToSvgConverter = () => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
-      const extracted = await extractColors(file, 10);
-      setColors(extracted.length || 1);
+      const extracted = await extractColors(file, MAX_COLORS);
+      setColors(extracted.length);
       setPalette(extracted);
+      setConversionResult(null);
     }
   };
 
@@ -66,19 +67,18 @@ const PngToSvgConverter = () => {
 
   const adjustColors = (delta) => {
     setColors((prev) => {
-      let next = Math.max(1, Math.min(10, prev + delta));
+      let next = Math.max(1, Math.min(MAX_COLORS, prev + delta));
       let newPalette = [...palette];
 
       if (next > newPalette.length) {
         for (let i = newPalette.length; i < next; i++) {
-          // Yeni renk mevcut paletten türetilir veya rastgele olur
           const base =
             newPalette[Math.floor(Math.random() * newPalette.length)] || "rgb(200,200,200)";
           const [r, g, b] = base.match(/\d+/g).map(Number);
-          const variation = `rgb(${Math.min(r + 20, 255)},${Math.min(
-            g + 20,
+          const variation = `rgb(${Math.min(r + 15, 255)},${Math.min(
+            g + 15,
             255
-          )},${Math.min(b + 20, 255)})`;
+          )},${Math.min(b + 15, 255)})`;
           newPalette.push(variation);
         }
       } else {
@@ -129,44 +129,46 @@ const PngToSvgConverter = () => {
     <div className="w-full max-w-5xl mx-auto">
       <Card className="p-6">
         <CardContent>
-          <div className="grid grid-cols-3 gap-6 items-start">
-            {/* Upload */}
-            <div
-              className={`border-2 border-dashed rounded-lg p-6 text-center ${
-                selectedFile ? "border-green-400" : "border-gray-300"
-              }`}
-            >
-              <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-sm font-medium text-gray-700 mb-2">Drag & Drop a File</p>
-              <Button onClick={openFileDialog} className="bg-green-500 text-white hover:bg-green-600">
-                Choose a File
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".png,.jpg,.jpeg"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-            </div>
+          {/* Upload Area */}
+          <div
+            className={`border-2 border-dashed rounded-lg p-6 text-center mb-6 ${
+              selectedFile ? "border-green-400" : "border-gray-300"
+            }`}
+          >
+            <Upload className="mx-auto h-12 w-12 text-gray-400 mb-2" />
+            <p className="text-sm font-medium text-gray-700 mb-2">Drag & Drop a File</p>
+            <Button onClick={openFileDialog} className="bg-green-500 text-white hover:bg-green-600">
+              Choose a File
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".png,.jpg,.jpeg"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+          </div>
 
-            {/* Preview + Controls */}
-            <div className="text-center">
-              <div className="flex justify-center mb-2 space-x-6">
-                <div>
-                  <label className="text-sm font-medium">Colors</label>
+          {/* Preview & Controls */}
+          <div className="grid grid-cols-2 gap-8 items-start">
+            {/* Left Column */}
+            <div className="flex flex-col items-center space-y-3">
+              {/* Controls */}
+              <div className="flex space-x-8 justify-center">
+                <div className="text-center">
+                  <label className="text-sm font-medium block mb-1">Colors</label>
                   <div className="flex items-center space-x-2 justify-center">
-                    <Button onClick={() => adjustColors(-1)}>-</Button>
-                    <div className="w-8 text-center">{colors}</div>
-                    <Button onClick={() => adjustColors(1)}>+</Button>
+                    <Button onClick={() => adjustColors(-1)} className="px-3 py-1 text-lg">-</Button>
+                    <div className="w-10 text-center">{colors}</div>
+                    <Button onClick={() => adjustColors(1)} className="px-3 py-1 text-lg">+</Button>
                   </div>
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Simplify</label>
+                <div className="text-center">
+                  <label className="text-sm font-medium block mb-1">Simplify</label>
                   <div className="flex items-center space-x-2 justify-center">
-                    <Button onClick={() => setSimplify((s) => Math.max(0, s - 1))}>-</Button>
-                    <div className="w-8 text-center">{simplify}</div>
-                    <Button onClick={() => setSimplify((s) => Math.min(10, s + 1))}>+</Button>
+                    <Button onClick={() => setSimplify((s) => Math.max(0, s - 1))} className="px-3 py-1 text-lg">-</Button>
+                    <div className="w-10 text-center">{simplify}</div>
+                    <Button onClick={() => setSimplify((s) => Math.min(10, s + 1))} className="px-3 py-1 text-lg">+</Button>
                   </div>
                 </div>
               </div>
@@ -176,69 +178,73 @@ const PngToSvgConverter = () => {
                 <img
                   src={URL.createObjectURL(selectedFile)}
                   alt="Original Preview"
-                  className="mx-auto border rounded mb-2 w-48 h-48 object-contain"
+                  className="border rounded w-64 h-64 object-contain"
                 />
               )}
 
               {/* Palette */}
-              <div className="flex justify-center space-x-2 mt-2 flex-wrap">
-                {palette.map((color, i) => (
-                  <div key={i} className="relative">
-                    <div
-                      className="w-8 h-8 rounded border cursor-pointer"
-                      style={{ backgroundColor: color }}
-                      onClick={() => colorInputRefs.current[i]?.click()}
-                    />
-                    <input
-                      type="color"
-                      ref={(el) => (colorInputRefs.current[i] = el)}
-                      className="hidden"
-                      value={`#${color
-                        .match(/\d+/g)
-                        .map((x) => parseInt(x).toString(16).padStart(2, "0"))
-                        .join("")}`}
-                      onChange={(e) => handleColorChange(i, e.target.value)}
-                    />
-                  </div>
-                ))}
+              <div className="w-64">
+                <label className="text-sm font-medium block mb-1">Palette</label>
+                <div className="grid grid-cols-10 gap-1">
+                  {palette.map((color, i) => (
+                    <div key={i} className="relative">
+                      <div
+                        className="w-6 h-6 rounded border cursor-pointer"
+                        style={{ backgroundColor: color }}
+                        onClick={() => colorInputRefs.current[i]?.click()}
+                      />
+                      <input
+                        type="color"
+                        ref={(el) => (colorInputRefs.current[i] = el)}
+                        className="hidden"
+                        value={`#${color
+                          .match(/\d+/g)
+                          .map((x) => parseInt(x).toString(16).padStart(2, "0"))
+                          .join("")}`}
+                        onChange={(e) => handleColorChange(i, e.target.value)}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
+
+              {/* Convert Button */}
+              <Button
+                onClick={handleConvert}
+                disabled={loading || !selectedFile}
+                className="bg-lime-500 hover:bg-lime-600 text-white w-64 py-2 mt-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Converting...
+                  </>
+                ) : (
+                  "Convert"
+                )}
+              </Button>
             </div>
 
-            {/* Result */}
-            <div className="text-center">
+            {/* Right Column - Result */}
+            <div className="flex flex-col items-center space-y-3">
               {conversionResult?.preview ? (
                 <img
                   src={conversionResult.preview}
                   alt="SVG Preview"
-                  className="mx-auto border rounded mb-2 w-48 h-48 object-contain"
+                  className="border rounded w-64 h-64 object-contain"
                 />
               ) : (
-                <div className="w-48 h-48 border-2 border-dashed mx-auto mb-2 rounded" />
+                <div className="w-64 h-64 border-2 border-dashed rounded" />
               )}
-              {conversionResult && (
-                <Button onClick={downloadSvg} className="bg-green-500 text-white hover:bg-green-600">
-                  <Download className="mr-2 h-4 w-4" />
-                  Download SVG
-                </Button>
-              )}
-            </div>
-          </div>
 
-          {/* Convert Button */}
-          <div className="flex justify-center mt-6">
-            <Button
-              onClick={handleConvert}
-              disabled={loading || !selectedFile}
-              className="bg-lime-500 hover:bg-lime-600 text-white px-8 py-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Converting...
-                </>
-              ) : (
-                "Convert"
-              )}
-            </Button>
+              <Button
+                onClick={downloadSvg}
+                disabled={!conversionResult}
+                className="bg-lime-500 hover:bg-lime-600 text-white w-64 py-2"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download SVG
+              </Button>
+            </div>
           </div>
 
           {error && <p className="text-red-600 text-center mt-2">{error}</p>}
