@@ -39,7 +39,7 @@ function App() {
         <img
           src={headerImage}
           alt="PNG to SVG Banner"
-          className="w-full max-h-[400px] object-cover rounded-lg shadow"
+          className="w-full max-h-[250px] object-cover rounded-lg shadow"
         />
       </div>
 
