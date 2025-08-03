@@ -9,20 +9,19 @@ import CricutSilhouetteSection from "./components/CricutSilhouetteSection";
 import InfoSection from "./components/InfoSection";
 import HowItWorksSection from "./components/HowItWorksSection";
 
-import logo from "./assets/thingstosvg.png"; // <== LOGO EKLENDİ
+import logo from "./assets/thingstosvg.png"; // <== LOGO
 
 function App() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* HEADER */}
       <header className="flex justify-between items-center py-4 px-6 shadow">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center">
           <img
             src={logo}
             alt="ThingsToSVG"
             className="h-10 w-auto"
           />
-          <span className="text-2xl font-bold">ThingsToSVG</span>
         </div>
 
         <nav className="space-x-6 text-sm font-semibold">
