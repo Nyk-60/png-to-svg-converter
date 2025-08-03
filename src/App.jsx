@@ -9,7 +9,8 @@ import CricutSilhouetteSection from "./components/CricutSilhouetteSection";
 import InfoSection from "./components/InfoSection";
 import HowItWorksSection from "./components/HowItWorksSection";
 
-import logo from "./assets/thingstosvg.png"; // <== LOGO
+import logo from "./assets/thingstosvg.png";         // Logo
+import headerImage from "./assets/headeralti.jpg";   // Header altı görsel
 
 function App() {
   return (
@@ -32,6 +33,15 @@ function App() {
           <a href="#contact" className="hover:text-blue-500">CONTACT</a>
         </nav>
       </header>
+
+      {/* HEADER ALTI GÖRSEL */}
+      <div className="w-full flex justify-center my-4">
+        <img
+          src={headerImage}
+          alt="PNG to SVG Banner"
+          className="w-full max-h-[400px] object-cover rounded-lg shadow"
+        />
+      </div>
 
       <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
         <AdSpace height="32" />
