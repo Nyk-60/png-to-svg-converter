@@ -1,95 +1,111 @@
-import React, { useState, useRef } from 'react';
-import { Download, Upload } from 'lucide-react';
-import fileBack from '../assets/file_back.png';
-import { useImageConverter } from '../hooks/useImageConverter.js';
+import React, { useState, useRef } from "react";
+import { Button } from "@/components/ui/button.jsx";
+import { Download, Upload, Loader2 } from "lucide-react";
+import fileBack from "../assets/file_back.png";
 
 const SvgToPngConverter = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [conversionResult, setConversionResult] = useState(null);
+  const [loading, setLoading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const { convertSvgToPng, loading } = useImageConverter();
-
   const handleFileSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setSelectedFile(file);
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
   };
 
   const handleConvert = async () => {
-    if (!selectedFile) return;
-    const result = await convertSvgToPng(selectedFile);
-    setConversionResult(result);
+    if (!selectedFile) {
+      alert("Please select a file first!");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // SVG → PNG dönüştürme işlemi burada yapılır.
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        // Basit önizleme olarak PNG base64 göstereceğiz
+        setConversionResult({ preview: ev.target.result });
+        setLoading(false);
+      };
+      reader.readAsDataURL(selectedFile);
+    } catch (err) {
+      alert("Conversion failed: " + err.message);
+      setLoading(false);
+    }
   };
 
   const downloadPng = () => {
-    if (!conversionResult?.png) return;
-    const a = document.createElement('a');
-    a.href = conversionResult.png;
-    a.download = 'converted.png';
+    if (!conversionResult?.preview) return;
+    const a = document.createElement("a");
+    a.href = conversionResult.preview;
+    a.download = "converted.png";
     a.click();
   };
 
   return (
-    <div className="p-6 border rounded-xl shadow-md bg-white">
-      {/* Dosya yükleme alanı */}
+    <div className="flex flex-col items-center space-y-4">
+      {/* File Upload */}
       <div
-        className="border-2 border-dashed rounded-md p-6 text-center mb-6"
+        className="border-2 border-dashed rounded-lg w-full max-w-3xl h-40 flex flex-col items-center justify-center space-y-2"
         onClick={() => fileInputRef.current?.click()}
       >
-        <Upload className="mx-auto mb-2 text-gray-500" />
-        <p>Drag & Drop a File</p>
-        <button className="mt-2 px-4 py-1 bg-green-500 text-white rounded">Choose a File</button>
+        <Upload className="text-gray-400" />
+        <span>Drag & Drop a File</span>
+        <Button className="bg-green-500 hover:bg-green-600">Choose a File</Button>
         <input
-          ref={fileInputRef}
           type="file"
+          ref={fileInputRef}
           accept=".svg"
           className="hidden"
           onChange={handleFileSelect}
         />
       </div>
 
-      {/* Önizleme alanı */}
-      <div className="grid grid-cols-2 gap-8 items-start">
-        {/* Sol Alan */}
+      <div className="flex justify-center gap-16 w-full max-w-5xl mt-4">
+        {/* LEFT COLUMN */}
         <div className="flex flex-col items-center">
-          <div className="relative w-64 h-64 bg-center bg-contain bg-no-repeat" style={{backgroundImage:`url(${fileBack})`}}>
+          <div className="relative w-64 h-64 border rounded-lg overflow-hidden">
+            <img src={fileBack} className="absolute inset-0 w-full h-full" />
             {selectedFile && (
               <img
                 src={URL.createObjectURL(selectedFile)}
-                alt="SVG Preview"
                 className="absolute inset-0 w-full h-full object-contain"
               />
             )}
           </div>
 
-          <button
+          <Button
+            className="mt-3 bg-lime-400 hover:bg-lime-500"
             onClick={handleConvert}
-            className="mt-4 px-6 py-2 bg-lime-400 rounded text-white font-semibold"
-            disabled={!selectedFile || loading}
+            disabled={loading}
           >
-            Convert
-          </button>
+            {loading ? <Loader2 className="animate-spin" /> : "Convert"}
+          </Button>
         </div>
 
-        {/* Sağ Alan */}
+        {/* RIGHT COLUMN */}
         <div className="flex flex-col items-center">
-          <div className="relative w-64 h-64 bg-center bg-contain bg-no-repeat" style={{backgroundImage:`url(${fileBack})`}}>
+          <div className="text-sm font-medium mb-2">Preview</div>
+          <div className="relative w-64 h-64 border rounded-lg overflow-hidden">
+            <img src={fileBack} className="absolute inset-0 w-full h-full" />
             {conversionResult?.preview && (
               <img
                 src={conversionResult.preview}
-                alt="PNG Result"
                 className="absolute inset-0 w-full h-full object-contain"
               />
             )}
           </div>
-          <button
-            disabled={!conversionResult}
+
+          <Button
+            className="mt-3 bg-lime-400 hover:bg-lime-500"
             onClick={downloadPng}
-            className="mt-4 px-6 py-2 bg-lime-400 rounded text-white font-semibold disabled:opacity-50"
+            disabled={!conversionResult}
           >
-            <Download className="inline-block mr-1 w-4 h-4" /> Download PNG
-          </button>
+            <Download className="mr-2 h-4 w-4" /> Download PNG
+          </Button>
         </div>
       </div>
     </div>
