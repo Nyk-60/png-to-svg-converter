@@ -11,6 +11,7 @@ import HowItWorksSection from "./components/HowItWorksSection";
 
 import logo from "./assets/thingstosvg.png";
 import headerImage from "./assets/headeralti.jpg";
+import svgToPngImage from "./assets/svgyopngimage.jpg";
 
 function App() {
   return (
@@ -18,11 +19,7 @@ function App() {
       {/* HEADER */}
       <header className="flex justify-between items-center py-4 px-6 shadow">
         <div className="flex items-center">
-          <img
-            src={logo}
-            alt="ThingsToSVG"
-            className="h-10 w-auto"
-          />
+          <img src={logo} alt="ThingsToSVG" className="h-10 w-auto" />
         </div>
 
         <nav className="space-x-6 text-sm font-semibold">
@@ -34,45 +31,55 @@ function App() {
         </nav>
       </header>
 
-      {/* HEADER ALTI BANNER */}
-      <div className="flex justify-center my-6">
-        <div className="w-[800px]">
-          <img
-            src={headerImage}
-            alt="PNG to SVG Banner"
-            className="w-full h-[250px] object-contain rounded-lg shadow"
-          />
-        </div>
-      </div>
-
       <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
-        <AdSpace height="32" />
 
-        <section>
-          <h2 className="text-3xl font-bold text-center mb-8">PNG to SVG</h2>
+        {/* PNG to SVG Section */}
+        <section className="text-center">
+          <h2 className="text-2xl font-bold mb-4">PNG to SVG</h2>
+          <div className="flex justify-center mb-8">
+            <div className="w-[800px]">
+              <img
+                src={headerImage}
+                alt="PNG to SVG Banner"
+                className="w-full h-[250px] object-contain rounded-lg shadow"
+              />
+            </div>
+          </div>
           <PngToSvgConverter />
         </section>
 
         <CricutSilhouetteSection />
 
+        {/* Reklam Alanları */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <AdSpace height="64" />
-          <AdSpace height="64" />
+          <AdSpace height="64" showPlaceholder={false} />
+          <AdSpace height="64" showPlaceholder={false} />
         </div>
 
+        {/* Gallery */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Gallery title="FREE SVG gallery" type="svg" />
           <Gallery title="FREE PNG gallery" type="png" />
         </div>
 
-        <section>
-          <h2 className="text-3xl font-bold text-center mb-8">SVG to PNG</h2>
+        {/* SVG to PNG Section */}
+        <section className="text-center">
+          <h2 className="text-2xl font-bold mb-4">SVG to PNG</h2>
+          <div className="flex justify-center mb-8">
+            <div className="w-[800px]">
+              <img
+                src={svgToPngImage}
+                alt="SVG to PNG Banner"
+                className="w-full h-[250px] object-contain rounded-lg shadow"
+              />
+            </div>
+          </div>
           <SvgToPngConverter />
         </section>
 
         <InfoSection />
         <HowItWorksSection />
-        <AdSpace height="32" />
+        <AdSpace height="32" showPlaceholder={false} />
       </main>
 
       <Footer />
