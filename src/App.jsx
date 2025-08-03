@@ -73,7 +73,9 @@ function App() {
 
         <InfoSection />
         <HowItWorksSection />
-        <AdSpace height="32" showPlaceholder={false} />
+
+        {/* AdSpace üst/orta alanlar kullanılabilir, alt placeholder kaldırıldı */}
+        <AdSpace height="64" showPlaceholder={false} />
       </main>
 
       <Footer />
