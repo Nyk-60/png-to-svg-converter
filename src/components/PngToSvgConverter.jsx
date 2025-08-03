@@ -9,10 +9,11 @@ const PngToSvgConverter = () => {
   const [colors, setColors] = useState([9]);
   const [simplify, setSimplify] = useState([0]);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [conversionResult, setConversionResult] = useState(null);
   const fileInputRef = useRef(null);
-  
+
   const { convertPngToSvg, loading, error } = useImageConverter();
 
   const handleDrag = (e) => {
@@ -29,15 +30,19 @@ const PngToSvgConverter = () => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setSelectedFile(e.dataTransfer.files[0]);
+      const file = e.dataTransfer.files[0];
+      setSelectedFile(file);
+      setFilePreview(URL.createObjectURL(file));
     }
   };
 
   const handleFileSelect = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setSelectedFile(file);
+      setFilePreview(URL.createObjectURL(file));
     }
   };
 
@@ -62,7 +67,7 @@ const PngToSvgConverter = () => {
 
   const downloadSvg = () => {
     if (!conversionResult?.svg) return;
-    
+
     const blob = new Blob([conversionResult.svg], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -99,8 +104,8 @@ const PngToSvgConverter = () => {
             <div className="space-y-2">
               <label className="text-sm font-medium">Colors</label>
               <div className="flex items-center space-x-4">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setColors([Math.max(1, colors[0] - 1)])}
                 >
@@ -114,8 +119,8 @@ const PngToSvgConverter = () => {
                   step={1}
                   className="flex-1"
                 />
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setColors([Math.min(32, colors[0] + 1)])}
                 >
@@ -128,8 +133,8 @@ const PngToSvgConverter = () => {
             <div className="space-y-2">
               <label className="text-sm font-medium">Simplify</label>
               <div className="flex items-center space-x-4">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setSimplify([Math.max(0, simplify[0] - 1)])}
                 >
@@ -143,8 +148,8 @@ const PngToSvgConverter = () => {
                   step={1}
                   className="flex-1"
                 />
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => setSimplify([Math.min(10, simplify[0] + 1)])}
                 >
@@ -158,8 +163,8 @@ const PngToSvgConverter = () => {
           {/* File Upload Area */}
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              dragActive 
-                ? 'border-blue-500 bg-blue-50' 
+              dragActive
+                ? 'border-blue-500 bg-blue-50'
                 : 'border-gray-300 hover:border-gray-400'
             }`}
             onDragEnter={handleDrag}
@@ -186,16 +191,34 @@ const PngToSvgConverter = () => {
             />
           </div>
 
-          {/* Preview */}
-          {conversionResult?.preview && (
+          {/* Side by Side Preview */}
+          {(filePreview || conversionResult?.preview) && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Preview</label>
-              <div className="flex justify-center">
-                <img 
-                  src={conversionResult.preview} 
-                  alt="Preview" 
-                  className="max-w-xs border rounded"
-                />
+              <div className="flex justify-center space-x-6">
+                {/* Original File Preview */}
+                {filePreview && (
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs text-gray-500 mb-1">Original</span>
+                    <img
+                      src={filePreview}
+                      alt="Original Preview"
+                      className="max-w-[180px] border rounded"
+                    />
+                  </div>
+                )}
+
+                {/* Converted SVG Preview */}
+                {conversionResult?.preview && (
+                  <div className="flex flex-col items-center">
+                    <span className="text-xs text-gray-500 mb-1">Converted SVG</span>
+                    <img
+                      src={conversionResult.preview}
+                      alt="Converted Preview"
+                      className="max-w-[180px] border rounded"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -204,22 +227,21 @@ const PngToSvgConverter = () => {
           <div className="space-y-2">
             <label className="text-sm font-medium">Palette</label>
             <div className="flex space-x-2">
-              {conversionResult?.colors ? 
-                conversionResult.colors.map((color, i) => (
-                  <div
-                    key={i}
-                    className="w-8 h-8 rounded border border-gray-300"
-                    style={{ backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})` }}
-                  />
-                )) :
-                Array.from({ length: colors[0] }, (_, i) => (
-                  <div
-                    key={i}
-                    className="w-8 h-8 rounded border border-gray-300"
-                    style={{ backgroundColor: `hsl(${(i * 360) / colors[0]}, 70%, 50%)` }}
-                  />
-                ))
-              }
+              {conversionResult?.colors
+                ? conversionResult.colors.map((color, i) => (
+                    <div
+                      key={i}
+                      className="w-8 h-8 rounded border border-gray-300"
+                      style={{ backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})` }}
+                    />
+                  ))
+                : Array.from({ length: colors[0] }, (_, i) => (
+                    <div
+                      key={i}
+                      className="w-8 h-8 rounded border border-gray-300"
+                      style={{ backgroundColor: `hsl(${(i * 360) / colors[0]}, 70%, 50%)` }}
+                    />
+                  ))}
             </div>
           </div>
 
@@ -232,9 +254,9 @@ const PngToSvgConverter = () => {
 
           {/* Convert Button */}
           <div className="flex justify-center">
-            <Button 
-              size="lg" 
-              className="px-8" 
+            <Button
+              size="lg"
+              className="px-8"
               onClick={handleConvert}
               disabled={loading || !selectedFile}
             >
@@ -252,9 +274,9 @@ const PngToSvgConverter = () => {
           {/* Download Button */}
           {conversionResult && (
             <div className="flex justify-center">
-              <Button 
-                variant="outline" 
-                size="lg" 
+              <Button
+                variant="outline"
+                size="lg"
                 className="px-8"
                 onClick={downloadSvg}
               >
@@ -270,4 +292,3 @@ const PngToSvgConverter = () => {
 };
 
 export default PngToSvgConverter;
-
