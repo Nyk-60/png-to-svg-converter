@@ -3,14 +3,13 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import PngToSvgConverter from "./components/PngToSvgConverter";
 import SvgToPngConverter from "./components/SvgToPngConverter";
+import AdSpace from "./components/AdSpace";
 import Gallery from "./components/Gallery";
 import CricutSilhouetteSection from "./components/CricutSilhouetteSection";
 import InfoSection from "./components/InfoSection";
 import HowItWorksSection from "./components/HowItWorksSection";
 
 import logo from "./assets/thingstosvg.png";
-import headerImage from "./assets/headeralti.jpg";
-import svgToPngImage from "./assets/svgyopngimage.jpg";
 
 function App() {
   return (
@@ -30,20 +29,11 @@ function App() {
         </nav>
       </header>
 
-      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-16">
 
         {/* PNG to SVG Section */}
         <section className="text-center">
-          <h2 className="text-2xl font-bold mb-4">PNG to SVG</h2>
-          <div className="flex justify-center mb-8">
-            <div className="w-[800px]">
-              <img
-                src={headerImage}
-                alt="PNG to SVG Banner"
-                className="w-full h-[250px] object-contain rounded-lg shadow"
-              />
-            </div>
-          </div>
+          <h2 className="text-3xl font-bold mb-6">PNG to SVG</h2>
           <PngToSvgConverter />
         </section>
 
@@ -57,21 +47,13 @@ function App() {
 
         {/* SVG to PNG Section */}
         <section className="text-center">
-          <h2 className="text-2xl font-bold mb-4">SVG to PNG</h2>
-          <div className="flex justify-center mb-8">
-            <div className="w-[800px]">
-              <img
-                src={svgToPngImage}
-                alt="SVG to PNG Banner"
-                className="w-full h-[250px] object-contain rounded-lg shadow"
-              />
-            </div>
-          </div>
+          <h2 className="text-3xl font-bold mb-6">SVG to PNG</h2>
           <SvgToPngConverter />
         </section>
 
         <InfoSection />
         <HowItWorksSection />
+        <AdSpace height="32" showPlaceholder={false} />
       </main>
 
       <Footer />
