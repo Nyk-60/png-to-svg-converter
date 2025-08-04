@@ -1,43 +1,69 @@
 import React, { useState, useRef } from 'react';
-import { Button } from '@/components/ui/button.jsx';
-import { Upload, Download, Loader2 } from 'lucide-react';
-import { useImageConverter } from '../hooks/useImageConverter.js';
-import fileBack from '../assets/file_back.png';
 import { SketchPicker } from 'react-color';
+import { Upload, Download } from 'lucide-react';
+import { useImageConverter } from '../hooks/useImageConverter.js';
+import Button from '../components/ui/button.jsx';
+import Card from '../components/ui/card.jsx';
+import Slider from '../components/ui/slider.jsx';
+import fileBack from '../assets/file_back.png';
 
 const PngToSvgConverter = () => {
-  const [colors, setColors] = useState([1]);
-  const [simplify, setSimplify] = useState([0]);
-  const [palette, setPalette] = useState(['#bfbfbf']);
+  const [colors, setColors] = useState(1);
+  const [simplify, setSimplify] = useState(0);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
   const [conversionResult, setConversionResult] = useState(null);
-  const [activeColorIndex, setActiveColorIndex] = useState(null);
-  const [loadingConvert, setLoadingConvert] = useState(false);
+  const [palette, setPalette] = useState(['#bdbdbd']);
+  const [editingColor, setEditingColor] = useState(null);
 
   const fileInputRef = useRef(null);
-  const { convertPngToSvg } = useImageConverter();
+  const { convertPngToSvg, loading, error } = useImageConverter();
+
+  // --- Dosya Seçim Fonksiyonları ---
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(e.type === "dragenter" || e.type === "dragover");
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
 
   const handleFileSelect = (e) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
-      // Varsayılan: tek renk ile başlat
-      setColors([1]);
-      setPalette(['#bfbfbf']);
+      handleFile(e.target.files[0]);
     }
+  };
+
+  const handleFile = (file) => {
+    setSelectedFile(file);
+    // Varsayılan renk paleti oluştur
+    const defaultColors = 1;
+    setColors(defaultColors);
+    setPalette(Array(defaultColors).fill('#bdbdbd'));
   };
 
   const openFileDialog = () => {
     fileInputRef.current?.click();
   };
 
+  // --- Dönüştürme ---
   const handleConvert = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      alert('Lütfen önce bir dosya seçin.');
+      return;
+    }
     try {
-      setLoadingConvert(true);
-      const result = await convertPngToSvg(selectedFile, colors[0], simplify[0]);
+      const result = await convertPngToSvg(selectedFile, colors, simplify);
       setConversionResult(result);
-    } finally {
-      setLoadingConvert(false);
+    } catch (err) {
+      alert('Dönüştürme sırasında hata: ' + err.message);
     }
   };
 
@@ -54,38 +80,37 @@ const PngToSvgConverter = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Renk paletini güncelle
-  const handleColorChange = (color, index) => {
-    const newPalette = [...palette];
-    newPalette[index] = color.hex;
-    setPalette(newPalette);
+  // --- Palette Kontrolleri ---
+  const updatePaletteSize = (newSize) => {
+    setColors(newSize);
+    if (newSize > palette.length) {
+      setPalette([...palette, ...Array(newSize - palette.length).fill('#bdbdbd')]);
+    } else {
+      setPalette(palette.slice(0, newSize));
+    }
   };
 
-  // Colors + / - kontrolü
-  const changeColors = (val) => {
-    let newCount = Math.min(10, Math.max(1, colors[0] + val));
-    setColors([newCount]);
+  const handleColorChange = (color) => {
     const newPalette = [...palette];
-    if (newCount > palette.length) {
-      for (let i = palette.length; i < newCount; i++) {
-        newPalette.push('#bfbfbf'); // placeholder renk
-      }
-    } else {
-      newPalette.length = newCount;
-    }
+    newPalette[editingColor] = color.hex;
     setPalette(newPalette);
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto text-center space-y-4">
-      {/* Dosya Yükleme */}
+    <div className="w-full max-w-5xl mx-auto">
+      {/* Drag & Drop */}
       <div
-        className="border-2 border-dashed rounded-lg p-6 mb-6"
-        onClick={openFileDialog}
+        className={`border-2 border-dashed rounded-lg p-6 text-center mb-6 transition-colors ${
+          dragActive ? 'border-green-400 bg-green-50' : 'border-gray-300'
+        }`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
       >
-        <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-        <p className="mb-2 text-gray-600">Drag & Drop a File</p>
-        <Button className="bg-green-500 hover:bg-green-600">Choose a File</Button>
+        <Upload className="mx-auto h-10 w-10 text-gray-400 mb-2" />
+        <p className="mb-2">Drag & Drop a File</p>
+        <Button onClick={openFileDialog}>Choose a File</Button>
         <input
           ref={fileInputRef}
           type="file"
@@ -96,13 +121,10 @@ const PngToSvgConverter = () => {
       </div>
 
       {/* Önizleme Alanları */}
-      <div className="flex justify-center space-x-12">
+      <div className="flex justify-center gap-12">
         {/* Sol Alan */}
-        <div className="flex flex-col items-center w-72">
-          <div
-            className="relative w-72 h-72 bg-center bg-cover mb-2"
-            style={{ backgroundImage: `url(${fileBack})` }}
-          >
+        <div className="flex flex-col items-center">
+          <div className="relative w-64 h-64 bg-center bg-no-repeat bg-contain" style={{ backgroundImage: `url(${fileBack})` }}>
             {selectedFile && (
               <img
                 src={URL.createObjectURL(selectedFile)}
@@ -112,68 +134,46 @@ const PngToSvgConverter = () => {
             )}
           </div>
 
-          {/* Colors & Simplify */}
-          <div className="flex space-x-4 mb-2">
-            <div className="flex items-center space-x-1">
-              <Button onClick={() => changeColors(-1)} className="bg-black text-white h-7 w-7 p-0">-</Button>
-              <span className="text-white bg-black w-8 flex justify-center">{colors[0]}</span>
-              <Button onClick={() => changeColors(1)} className="bg-black text-white h-7 w-7 p-0">+</Button>
+          <div className="flex gap-4 mt-4">
+            {/* Colors */}
+            <div className="flex items-center gap-2">
+              <Button onClick={() => updatePaletteSize(Math.max(1, colors - 1))}>-</Button>
+              <span className="text-white bg-black px-3 py-1 rounded">{colors}</span>
+              <Button onClick={() => updatePaletteSize(Math.min(10, colors + 1))}>+</Button>
             </div>
-            <div className="flex items-center space-x-1">
-              <Button onClick={() => setSimplify([Math.max(0, simplify[0]-1)])} className="bg-black text-white h-7 w-7 p-0">-</Button>
-              <span className="text-white bg-black w-8 flex justify-center">{simplify[0]}</span>
-              <Button onClick={() => setSimplify([Math.min(10, simplify[0]+1)])} className="bg-black text-white h-7 w-7 p-0">+</Button>
+
+            {/* Simplify */}
+            <div className="flex items-center gap-2">
+              <Button onClick={() => setSimplify(Math.max(0, simplify - 1))}>-</Button>
+              <span className="text-white bg-black px-3 py-1 rounded">{simplify}</span>
+              <Button onClick={() => setSimplify(Math.min(10, simplify + 1))}>+</Button>
             </div>
           </div>
 
           {/* Palette */}
-          <div className="mb-2">
-            <span className="text-sm">Palette</span>
-            <div className="flex justify-center mt-1 space-x-1">
+          <div className="mt-4">
+            <p className="text-center text-sm mb-2">Palette</p>
+            <div className="flex gap-2">
               {palette.map((color, i) => (
                 <div
                   key={i}
-                  onClick={() => setActiveColorIndex(i)}
-                  className="w-6 h-6 rounded cursor-pointer border"
+                  className="w-6 h-6 border rounded cursor-pointer"
                   style={{ backgroundColor: color }}
+                  onClick={() => setEditingColor(i)}
                 />
               ))}
             </div>
           </div>
 
-          {/* Renk Seçici */}
-          {activeColorIndex !== null && (
-            <div className="absolute mt-2 z-50">
-              <SketchPicker
-                color={palette[activeColorIndex]}
-                onChange={(color) => handleColorChange(color, activeColorIndex)}
-              />
-              <Button
-                className="mt-2 bg-red-500 text-white"
-                onClick={() => setActiveColorIndex(null)}
-              >
-                Close
-              </Button>
-            </div>
-          )}
-
           {/* Convert */}
-          <Button
-            className="bg-lime-400 hover:bg-lime-500 mt-2"
-            onClick={handleConvert}
-            disabled={loadingConvert || !selectedFile}
-          >
-            {loadingConvert ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : 'Convert'}
+          <Button onClick={handleConvert} className="mt-4 bg-lime-400 px-6 py-2 rounded">
+            Convert
           </Button>
         </div>
 
         {/* Sağ Alan */}
-        <div className="flex flex-col items-center w-72">
-          <span className="mb-1 text-sm">Colors</span>
-          <div
-            className="relative w-72 h-72 bg-center bg-cover mb-2"
-            style={{ backgroundImage: `url(${fileBack})` }}
-          >
+        <div className="flex flex-col items-center">
+          <div className="relative w-64 h-64 bg-center bg-no-repeat bg-contain" style={{ backgroundImage: `url(${fileBack})` }}>
             {conversionResult?.preview && (
               <img
                 src={conversionResult.preview}
@@ -182,28 +182,26 @@ const PngToSvgConverter = () => {
               />
             )}
           </div>
-          {/* SVG Colors */}
-          {conversionResult?.colors && (
-            <div className="flex justify-center mt-1 space-x-1 mb-2">
-              {conversionResult.colors.map((color, i) => (
-                <div
-                  key={i}
-                  className="w-6 h-6 rounded border cursor-pointer"
-                  style={{ backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})` }}
-                />
-              ))}
-            </div>
-          )}
-
+          <p className="mt-2 text-sm">Colors</p>
           <Button
-            className="bg-lime-400 hover:bg-lime-500 mt-2"
             onClick={downloadSvg}
             disabled={!conversionResult}
+            className="mt-4 bg-lime-400 px-6 py-2 rounded"
           >
-            <Download className="mr-1 h-4 w-4" /> Download SVG
+            <Download className="mr-2 h-4 w-4" /> Download SVG
           </Button>
         </div>
       </div>
+
+      {/* Color Picker */}
+      {editingColor !== null && (
+        <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-30 z-50">
+          <div className="bg-white p-4 rounded shadow">
+            <SketchPicker color={palette[editingColor]} onChange={handleColorChange} />
+            <Button onClick={() => setEditingColor(null)} className="mt-2">Close</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
