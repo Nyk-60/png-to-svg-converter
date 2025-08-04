@@ -1,92 +1,58 @@
-import React, { useState, useRef } from 'react';
-import { SketchPicker } from 'react-color';
-import { Upload, Download } from 'lucide-react';
-import { useImageConverter } from '../hooks/useImageConverter.js';
-import Button from '../components/ui/button.jsx';
-import Card from '../components/ui/card.jsx';
-import Slider from '../components/ui/slider.jsx';
-import fileBack from '../assets/file_back.png';
+import React, { useState, useRef } from "react";
+import { SketchPicker } from "react-color";
+import { Upload, Download } from "lucide-react";
+import { useImageConverter } from "../hooks/useImageConverter.js";
+import fileBack from "../assets/file_back.png";
 
 const PngToSvgConverter = () => {
   const [colors, setColors] = useState(1);
   const [simplify, setSimplify] = useState(0);
+  const [palette, setPalette] = useState(["#bdbdbd"]);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [dragActive, setDragActive] = useState(false);
   const [conversionResult, setConversionResult] = useState(null);
-  const [palette, setPalette] = useState(['#bdbdbd']);
   const [editingColor, setEditingColor] = useState(null);
 
   const fileInputRef = useRef(null);
-  const { convertPngToSvg, loading, error } = useImageConverter();
-
-  // --- Dosya Seçim Fonksiyonları ---
-  const handleDrag = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(e.type === "dragenter" || e.type === "dragover");
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleFileSelect = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      handleFile(e.target.files[0]);
-    }
-  };
+  const { convertPngToSvg, loading } = useImageConverter();
 
   const handleFile = (file) => {
     setSelectedFile(file);
-    // Varsayılan renk paleti oluştur
-    const defaultColors = 1;
-    setColors(defaultColors);
-    setPalette(Array(defaultColors).fill('#bdbdbd'));
+    setColors(1);
+    setPalette(["#bdbdbd"]);
   };
 
-  const openFileDialog = () => {
-    fileInputRef.current?.click();
+  const handleFileSelect = (e) => {
+    if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
   };
 
-  // --- Dönüştürme ---
+  const openFileDialog = () => fileInputRef.current?.click();
+
   const handleConvert = async () => {
-    if (!selectedFile) {
-      alert('Lütfen önce bir dosya seçin.');
-      return;
-    }
-    try {
-      const result = await convertPngToSvg(selectedFile, colors, simplify);
-      setConversionResult(result);
-    } catch (err) {
-      alert('Dönüştürme sırasında hata: ' + err.message);
-    }
+    if (!selectedFile) return alert("Please select a file first");
+    const result = await convertPngToSvg(selectedFile, colors, simplify);
+    setConversionResult(result);
   };
 
   const downloadSvg = () => {
     if (!conversionResult?.svg) return;
-    const blob = new Blob([conversionResult.svg], { type: 'image/svg+xml' });
+    const blob = new Blob([conversionResult.svg], { type: "image/svg+xml" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'converted.svg';
+    a.download = "converted.svg";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  // --- Palette Kontrolleri ---
   const updatePaletteSize = (newSize) => {
-    setColors(newSize);
-    if (newSize > palette.length) {
-      setPalette([...palette, ...Array(newSize - palette.length).fill('#bdbdbd')]);
+    const size = Math.max(1, Math.min(10, newSize));
+    setColors(size);
+    if (size > palette.length) {
+      setPalette([...palette, ...Array(size - palette.length).fill("#bdbdbd")]);
     } else {
-      setPalette(palette.slice(0, newSize));
+      setPalette(palette.slice(0, size));
     }
   };
 
@@ -97,20 +63,16 @@ const PngToSvgConverter = () => {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto">
-      {/* Drag & Drop */}
+    <div className="w-full flex flex-col items-center space-y-6">
+      {/* File Upload */}
       <div
-        className={`border-2 border-dashed rounded-lg p-6 text-center mb-6 transition-colors ${
-          dragActive ? 'border-green-400 bg-green-50' : 'border-gray-300'
-        }`}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
+        className="border-2 border-dashed rounded-lg p-6 w-full max-w-xl text-center cursor-pointer hover:border-green-400"
+        onClick={openFileDialog}
       >
-        <Upload className="mx-auto h-10 w-10 text-gray-400 mb-2" />
-        <p className="mb-2">Drag & Drop a File</p>
-        <Button onClick={openFileDialog}>Choose a File</Button>
+        <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+        <p className="mb-2 text-gray-600">
+          Drag & Drop or Click to Select a PNG/JPG
+        </p>
         <input
           ref={fileInputRef}
           type="file"
@@ -120,11 +82,14 @@ const PngToSvgConverter = () => {
         />
       </div>
 
-      {/* Önizleme Alanları */}
+      {/* Preview Grid */}
       <div className="flex justify-center gap-12">
-        {/* Sol Alan */}
-        <div className="flex flex-col items-center">
-          <div className="relative w-64 h-64 bg-center bg-no-repeat bg-contain" style={{ backgroundImage: `url(${fileBack})` }}>
+        {/* Left Column */}
+        <div className="flex flex-col items-center w-72">
+          <div
+            className="relative w-72 h-72 bg-center bg-contain bg-no-repeat"
+            style={{ backgroundImage: `url(${fileBack})` }}
+          >
             {selectedFile && (
               <img
                 src={URL.createObjectURL(selectedFile)}
@@ -134,26 +99,50 @@ const PngToSvgConverter = () => {
             )}
           </div>
 
+          {/* Controls */}
           <div className="flex gap-4 mt-4">
             {/* Colors */}
             <div className="flex items-center gap-2">
-              <Button onClick={() => updatePaletteSize(Math.max(1, colors - 1))}>-</Button>
-              <span className="text-white bg-black px-3 py-1 rounded">{colors}</span>
-              <Button onClick={() => updatePaletteSize(Math.min(10, colors + 1))}>+</Button>
+              <button
+                onClick={() => updatePaletteSize(colors - 1)}
+                className="bg-black text-white px-2 py-1 rounded"
+              >
+                -
+              </button>
+              <span className="text-white bg-black px-3 py-1 rounded text-center w-8">
+                {colors}
+              </span>
+              <button
+                onClick={() => updatePaletteSize(colors + 1)}
+                className="bg-black text-white px-2 py-1 rounded"
+              >
+                +
+              </button>
             </div>
-
             {/* Simplify */}
             <div className="flex items-center gap-2">
-              <Button onClick={() => setSimplify(Math.max(0, simplify - 1))}>-</Button>
-              <span className="text-white bg-black px-3 py-1 rounded">{simplify}</span>
-              <Button onClick={() => setSimplify(Math.min(10, simplify + 1))}>+</Button>
+              <button
+                onClick={() => setSimplify(Math.max(0, simplify - 1))}
+                className="bg-black text-white px-2 py-1 rounded"
+              >
+                -
+              </button>
+              <span className="text-white bg-black px-3 py-1 rounded text-center w-8">
+                {simplify}
+              </span>
+              <button
+                onClick={() => setSimplify(Math.min(10, simplify + 1))}
+                className="bg-black text-white px-2 py-1 rounded"
+              >
+                +
+              </button>
             </div>
           </div>
 
           {/* Palette */}
           <div className="mt-4">
-            <p className="text-center text-sm mb-2">Palette</p>
-            <div className="flex gap-2">
+            <p className="text-sm mb-2">Palette</p>
+            <div className="flex gap-1">
               {palette.map((color, i) => (
                 <div
                   key={i}
@@ -166,14 +155,22 @@ const PngToSvgConverter = () => {
           </div>
 
           {/* Convert */}
-          <Button onClick={handleConvert} className="mt-4 bg-lime-400 px-6 py-2 rounded">
+          <button
+            onClick={handleConvert}
+            disabled={loading || !selectedFile}
+            className="mt-4 bg-lime-400 px-6 py-2 rounded hover:bg-lime-500"
+          >
             Convert
-          </Button>
+          </button>
         </div>
 
-        {/* Sağ Alan */}
-        <div className="flex flex-col items-center">
-          <div className="relative w-64 h-64 bg-center bg-no-repeat bg-contain" style={{ backgroundImage: `url(${fileBack})` }}>
+        {/* Right Column */}
+        <div className="flex flex-col items-center w-72">
+          <p className="text-sm mb-1">Colors</p>
+          <div
+            className="relative w-72 h-72 bg-center bg-contain bg-no-repeat"
+            style={{ backgroundImage: `url(${fileBack})` }}
+          >
             {conversionResult?.preview && (
               <img
                 src={conversionResult.preview}
@@ -182,23 +179,43 @@ const PngToSvgConverter = () => {
               />
             )}
           </div>
-          <p className="mt-2 text-sm">Colors</p>
-          <Button
+          {conversionResult?.colors && (
+            <div className="flex justify-center mt-2 gap-1">
+              {conversionResult.colors.map((color, i) => (
+                <div
+                  key={i}
+                  className="w-6 h-6 border rounded"
+                  style={{
+                    backgroundColor: `rgb(${color[0]}, ${color[1]}, ${color[2]})`,
+                  }}
+                />
+              ))}
+            </div>
+          )}
+          <button
             onClick={downloadSvg}
             disabled={!conversionResult}
-            className="mt-4 bg-lime-400 px-6 py-2 rounded"
+            className="mt-4 bg-lime-400 px-6 py-2 rounded hover:bg-lime-500"
           >
-            <Download className="mr-2 h-4 w-4" /> Download SVG
-          </Button>
+            <Download className="inline mr-1 h-4 w-4" /> Download SVG
+          </button>
         </div>
       </div>
 
-      {/* Color Picker */}
+      {/* Color Picker Modal */}
       {editingColor !== null && (
         <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-30 z-50">
           <div className="bg-white p-4 rounded shadow">
-            <SketchPicker color={palette[editingColor]} onChange={handleColorChange} />
-            <Button onClick={() => setEditingColor(null)} className="mt-2">Close</Button>
+            <SketchPicker
+              color={palette[editingColor]}
+              onChange={handleColorChange}
+            />
+            <button
+              onClick={() => setEditingColor(null)}
+              className="mt-2 bg-red-500 text-white px-4 py-1 rounded"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
